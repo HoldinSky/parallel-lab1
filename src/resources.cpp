@@ -74,7 +74,7 @@ CPUStat get_cpu_stat() {
 
 ResUsage capture_resource_usage() {
     struct rusage start_usage{}, usage{};
-    double elapsed = 0.5;
+    double elapsed = 1;
 
     ResUsage res_usage{ 0, 0, 0, -1.0, -1.0 };
 
@@ -85,7 +85,7 @@ ResUsage capture_resource_usage() {
 
     auto start_stat = get_cpu_stat();
 
-    usleep(elapsed * 1'000'000);
+    usleep(static_cast<uint32_t>(elapsed * 1'000'000));
 
     auto end_stat = get_cpu_stat();
 
@@ -145,7 +145,7 @@ void add_percent_done(unsigned int delta) {
 
 std::atomic<bool> resource_usage_terminate_flag(false);
 
-void monitor_resource_usage(uint32_t threads_used) {
+void monitor_resource_usage(uint32_t threads_used, uint32_t matrix_size) {
     while (!resource_usage_terminate_flag) {
         const ResUsage usage = capture_resource_usage();
 
@@ -153,13 +153,15 @@ void monitor_resource_usage(uint32_t threads_used) {
 
          std::cout << "\033[2J\033[1;1H";
 
-         std::cout << "Threads used: " << threads_used << "\n\n";
+         std::cout << "Threads used: " << threads_used << "\n";
+         std::cout << "Threads in total: " << cpu_threads_number << "\n";
+         std::cout << "Matrix size: " << matrix_size << "\n\n";
 
          std::cout << "Total memory used: " << usage.total_memory_used_gb << " / " << usage.total_memory_gb << " Gb\n";
          printf("Total CPU usage: %.2Lf%%\n", usage.total_cpu_percentage);
 
-         std::cout << "Process memory usage: " << usage.memory_mb << " Mb\n";
-         printf("Process CPU used: %.2Lf%%\n\n", usage.cpu_percentage);
+         std::cout << "Process' memory used: " << usage.memory_mb << " Mb\n";
+         printf("Process' CPU used: %.2Lf%%\n\n", usage.cpu_percentage);
 
          std::cout << "Percent done: " << percent_done << "%\n";
     }

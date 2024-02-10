@@ -15,7 +15,7 @@
 
 static const unsigned int cpu_threads_number = std::thread::hardware_concurrency();
 
-void monitor_resource_usage(uint32_t threads_used);
+void monitor_resource_usage(uint32_t threads_used, uint32_t matrix_size);
 void terminate_resource_monitor();
 
 void set_percent_done(unsigned int new_percent_done);

@@ -91,7 +91,7 @@ void main_application(uint32_t threads_used, uint32_t matrix_size, uint32_t max_
         matrix.back().reserve(matrix_size);
     }
 
-    std::thread resources_monitor(monitor_resource_usage, threads_used);
+    std::thread resources_monitor(monitor_resource_usage, threads_used, matrix_size);
 
     auto execution_time = measure_execution_time([&]() { fill_matrix_multithreaded(max_value, threads_used); });
 
@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
     }
 
     main_application(
-            std::min(static_cast<uint32_t>(threads_used), cpu_threads_number),
+            threads_used,
             static_cast<uint32_t>(matrix_size),
             static_cast<uint32_t>(max_value)
     );
