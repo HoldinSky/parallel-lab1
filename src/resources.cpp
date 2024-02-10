@@ -4,8 +4,8 @@ typedef struct resource_usage {
     uint64_t total_memory_gb;
     uint64_t total_memory_used_gb;
     uint64_t memory_mb;
-    double cpu_percentage;
-    double total_cpu_percentage;
+    long double cpu_percentage;
+    long double total_cpu_percentage;
 } ResUsage;
 
 struct CPUStat {
@@ -74,6 +74,7 @@ CPUStat get_cpu_stat() {
 
 ResUsage capture_resource_usage() {
     struct rusage start_usage{}, usage{};
+    double elapsed = 0.5;
 
     ResUsage res_usage{ 0, 0, 0, -1.0, -1.0 };
 
@@ -84,7 +85,7 @@ ResUsage capture_resource_usage() {
 
     auto start_stat = get_cpu_stat();
 
-    usleep(1'000'000);
+    usleep(elapsed * 1'000'000);
 
     auto end_stat = get_cpu_stat();
 
@@ -93,8 +94,7 @@ ResUsage capture_resource_usage() {
         return res_usage;
     }
 
-    double elapsed = 1.0;
-    double cpu_time_diff = (usage.ru_utime.tv_sec - start_usage.ru_utime.tv_sec);
+    long double cpu_time_diff = (usage.ru_utime.tv_sec - start_usage.ru_utime.tv_sec);
 
     res_usage.cpu_percentage = (cpu_time_diff / elapsed / static_cast<double>(cpu_threads_number)) * 100.0;
     res_usage.memory_mb = usage.ru_maxrss / 1024;
@@ -123,8 +123,8 @@ ResUsage capture_resource_usage() {
     uint64_t start_work_time = start_total_time - start_stat.idle;
     uint64_t end_work_time = end_total_time - end_stat.idle;
 
-    double total_diff = end_total_time - start_total_time;
-    double work_diff = end_work_time - start_work_time;
+    long double total_diff = end_total_time - start_total_time;
+    long double work_diff = end_work_time - start_work_time;
 
     res_usage.total_cpu_percentage = work_diff / total_diff * 100.0;
 
@@ -156,10 +156,10 @@ void monitor_resource_usage(uint32_t threads_used) {
          std::cout << "Threads used: " << threads_used << "\n\n";
 
          std::cout << "Total memory used: " << usage.total_memory_used_gb << " / " << usage.total_memory_gb << " Gb\n";
-         printf("Total CPU usage: %.2f%%\n", usage.total_cpu_percentage);
+         printf("Total CPU usage: %.2Lf%%\n", usage.total_cpu_percentage);
 
          std::cout << "Process memory usage: " << usage.memory_mb << " Mb\n";
-         printf("Process CPU used: %.2f%%\n\n", usage.cpu_percentage);
+         printf("Process CPU used: %.2Lf%%\n\n", usage.cpu_percentage);
 
          std::cout << "Percent done: " << percent_done << "%\n";
     }
