@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 17)
 include_directories(./src)
 
 add_executable(
-        lab1
+        app
         main.cpp
         resources.cpp
 )

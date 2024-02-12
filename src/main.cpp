@@ -20,15 +20,19 @@ measure_execution_time(FT func) {
 std::atomic<uint32_t> progress_tracker = 0;
 std::mutex progress_mutex{};
 
-std::vector<std::vector<uint32_t>> matrix{};
-
-void fill_matrix(uint32_t low_col_idx, uint32_t high_col_idx, uint32_t max_value) {
+void fill_matrix(
+    std::vector<std::vector<uint32_t>>& matrix,
+    uint32_t low_col_idx,
+    uint32_t high_col_idx,
+    uint32_t max_value
+) {
     std::default_random_engine generator(seed());
     std::uniform_int_distribution<int> distribution(0, static_cast<int32_t>(max_value));
 
     auto random_value = [&] { return distribution(generator); };
 
-    const size_t one_hundreds = matrix.size() / 100;
+    const uint32_t matrix_size = matrix.size();
+    const size_t one_hundreds = matrix_size / 100;
 
     for (size_t i = low_col_idx; i <= high_col_idx; i++, progress_tracker++) {
         if (progress_tracker > one_hundreds) {
@@ -41,8 +45,7 @@ void fill_matrix(uint32_t low_col_idx, uint32_t high_col_idx, uint32_t max_value
         }
 
         uint32_t column_sum = 0;
-        for (size_t j = 0; j < matrix.size(); j++) {
-            matrix[i].emplace_back();
+        for (size_t j = 0; j < matrix_size; j++) {
             if (i == j) continue;
 
             matrix[i][j] = random_value();
@@ -53,7 +56,11 @@ void fill_matrix(uint32_t low_col_idx, uint32_t high_col_idx, uint32_t max_value
     }
 }
 
-void fill_matrix_multithreaded(uint32_t max_value, uint32_t threads_used) {
+void fill_matrix_multithreaded(
+    std::vector<std::vector<uint32_t>>& matrix,
+    uint32_t max_value,
+    uint32_t threads_used
+) {
     std::vector<std::thread> threads{};
     threads.reserve(threads_used);
 
@@ -70,7 +77,7 @@ void fill_matrix_multithreaded(uint32_t max_value, uint32_t threads_used) {
     }
 
     for (size_t i = 0; i < threads_used; i++) {
-        threads.emplace_back(fill_matrix, interval_start, interval_end, max_value);
+        threads.emplace_back(fill_matrix, std::ref(matrix), interval_start, interval_end, max_value);
 
         interval_start = interval_end + 1;
         interval_end = interval_start + interval - 1;
@@ -80,20 +87,15 @@ void fill_matrix_multithreaded(uint32_t max_value, uint32_t threads_used) {
         }
     }
 
-    for (auto &thread: threads) thread.join();
+    for (auto& thread : threads) thread.join();
 }
 
 void main_application(uint32_t threads_used, uint32_t matrix_size, uint32_t max_value) {
-    matrix.reserve(matrix_size);
-
-    for (size_t i = 0; i < matrix_size; i++) {
-        matrix.emplace_back();
-        matrix.back().reserve(matrix_size);
-    }
+    std::vector<std::vector<uint32_t>> matrix(matrix_size, std::vector<uint32_t>(matrix_size));
 
     std::thread resources_monitor(monitor_resource_usage, threads_used, matrix_size);
 
-    auto execution_time = measure_execution_time([&]() { fill_matrix_multithreaded(max_value, threads_used); });
+    auto execution_time = measure_execution_time([&]() { fill_matrix_multithreaded(matrix, max_value, threads_used); });
 
     terminate_resource_monitor();
     resources_monitor.join();
@@ -101,7 +103,7 @@ void main_application(uint32_t threads_used, uint32_t matrix_size, uint32_t max_
     std::cout << "\n\nFunction executed in: " << execution_time.count() << "ms\n";
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     if (argc < 3) {
         std::cout << R"(
             Illegal arguments list:
@@ -125,9 +127,9 @@ int main(int argc, char **argv) {
     }
 
     main_application(
-            threads_used,
-            static_cast<uint32_t>(matrix_size),
-            static_cast<uint32_t>(max_value)
+        threads_used,
+        static_cast<uint32_t>(matrix_size),
+        static_cast<uint32_t>(max_value)
     );
 
     return 0;
